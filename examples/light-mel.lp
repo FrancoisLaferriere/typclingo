@@ -8,6 +8,8 @@ type Mel := Atom | initial | next(Mel) | next(Interval, Mel) | eventually(Interv
 pred next(Mel).
 pred next(Interval, Mel).
 pred eventually(Interval, Mel).
+
+pred push(Light).
 *%
 
 light(l1).

@@ -10,6 +10,8 @@ pred next(Tel).
 pred eventually(Tel).
 pred eventually(Path, Del).
 pred always(Path, Del).
+
+pred push(Light).
 *%
 
 light(l1).

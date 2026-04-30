@@ -7,11 +7,12 @@ type Tel := Atom | initial | next(Tel) | eventually(Tel) | until(Tel, Tel).
 pred next(Tel).
 pred eventually(Tel).
 pred until(Tel, Tel).
+pred light(Light).
 *%
 
 light(l1).
 red(L) :- not green(L), light(L).
-next(eventually(green(L))) :- push(L).
+next(eventually(green(L))) :- push(L), light(L).
 next(push(l1)) :- initial.
 
 #external green(L): push(L).
