@@ -51,8 +51,11 @@ from ..spec import (
     STRING,
     SUPREMUM,
     SYMBOL,
+    TOP,
     FunctionCons,
     Type,
+    TypeCons,
+    TypeRelation,
     TypeSpec,
     TypeVar,
     UnionCons,
@@ -434,6 +437,8 @@ def check_stm(spec: TypeSpec, params: ParamHolder, stm: ast.Statement) -> None:
         checker = ClingoChecker(spec, glob, params.get_params())
         if isinstance(stm, ast.StatementRule):
             checker.add_hlit(stm.head)
+            head_constraints = checker.constraints
+            checker.constraints = []
         elif isinstance(stm, ast.StatementProject):
             checker.add_atom(stm.atom)
         elif isinstance(stm, ast.StatementShow):
@@ -496,8 +501,19 @@ def check_stm(spec: TypeSpec, params: ParamHolder, stm: ast.Statement) -> None:
             for blit in stm.body:
                 checker.add_blit(blit)
 
-        if not checker.solve():
+        ok = checker.solve()
+
+        if isinstance(stm, ast.StatementRule):
+            body_env = dict(checker.env)
+            checker.constraints = head_constraints
+            ok = checker.solve() and ok
+            ok = checker.check_head_superset(body_env, head_constraints) and ok
+
+        if not ok:
             logger.error("checking failed for %s", stm)
+            if isinstance(stm, ast.StatementRule):
+                return
+
         for name, typ in checker.type_map.items():
             logger.info(
                 "  %s : %s",

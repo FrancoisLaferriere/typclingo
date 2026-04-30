@@ -356,3 +356,45 @@ class TypeChecker:
                 logger.error("unsolvable type constraints: %s = %s", lhs, rhs)
 
         return res
+
+    def check_head_superset(self, body_env: dict[str, Type], head_constraints: list[tuple[Type, Type]]) -> bool:
+        var_to_declared: dict[str, list[Type]] = {}
+        res = True
+
+        def collect_vars(lhs: Type, declared: Type) -> None:
+            if isinstance(lhs, TypeVar):
+                var_to_declared.setdefault(lhs.name, []).append(declared)
+            elif isinstance(lhs, FunctionCons) and isinstance(declared, FunctionCons):
+                if lhs.name == declared.name and len(lhs.args) == len(declared.args):
+                    for la, da in zip(lhs.args, declared.args):
+                        collect_vars(la, da)
+            elif isinstance(lhs, UnionCons):
+                for opt in lhs.opts:
+                    collect_vars(opt, declared)
+            elif isinstance(declared, UnionCons):
+                for opt in declared.opts:
+                    collect_vars(lhs, opt)
+            elif isinstance(declared, TypeCons) and declared != TOP:
+                collect_vars(lhs, self.spec.get_type_def(declared.name).type)
+
+        for lhs, declared in head_constraints:
+            collect_vars(lhs, declared)
+
+        for var_name, decl_types in var_to_declared.items():
+            decl_type = self.simplify_type(UnionCons(decl_types))
+            inferred = body_env.get(var_name)
+            if decl_type == SYMBOL or inferred is None:
+                continue
+            if not self.subtype(self.expand_type(inferred), decl_type, {}, set()):
+                sym_def = self.spec.get_type_def(SYMBOL.name).type
+                if self.simplify_type(inferred) == self.simplify_type(sym_def):
+                    inferred = SYMBOL
+                logger.error(
+                    "head '%s': declared '%s' does not cover inferred '%s'",
+                    var_name,
+                    decl_type,
+                    inferred,
+                )
+                res = False
+
+        return res
