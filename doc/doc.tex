@@ -1,4 +1,5 @@
-\documentclass{amsart}
+\documentclass[a4paper]{amsart}
+\usepackage[margin=2cm]{geometry} % Adjust margin as needed
 
 \usepackage{amsmath}
 \usepackage{amssymb}
@@ -36,44 +37,41 @@ Furthermore, type specifications always include:
 	\item $\mathbb{S} \doteq \mathbb{F} \mid \mathbb{N}$
 \end{itemize}
 
-Type specifications may define recursive types, but every (recursive) type must have a base case.
 Each type constant occurring on the right-hand side of a $\lessdot$ or $\doteq$ is defined exactly once.
 
 
 We let $\Sigma$ be the set of all \emph{type variable mappings} from type variables to type expressions.
-We assume that such a mapping $\sigma$ maps all variables in $V$ to some type expression.
+We assume that mappings $\sigma\in\Sigma$ map all variables in $V$ to some type expression.
 We denote a type mapping as a set of expressions of the form $v \mapsto e$ where $v \in V$ and $e \in \mathcal{T}$.
 A mapping maps type variables to $\mathbb{S}$ if not explicitly given.
 Given $\sigma_1, \sigma_2 \in \Sigma$, we let $\sigma_1 \sqcup \sigma_2$ be the mapping defined as:
 $(\sigma_1 \sqcup \sigma_2)(v) = \sigma_1(v) \mid \sigma_2(v)$ for all $v \in V$.
 
+To handle recursive types,
+we use a call guard set $C \subseteq T \times \mathcal{T}$ of pairs of type constants and type expressions
+for which the meet is currently being computed.
 Function $\mathrm{meet}_{S}: \mathcal{T} \times \mathcal{T} \times \Sigma \times C \mapsto \mathcal{T} \times \Sigma$
-computes the \emph{meet} of two type expressions given a type variable mapping, a type specification $S$, and a seen set $C$.
+computes the \emph{meet} of two type expressions given a type variable mapping, a type specification $S$, and a call guard set $C$.
 The result is a new type expression and an updated type variable mapping.
-Here $C \subseteq \mathcal{T} \times \mathcal{T}$ is a set of pairs of type expressions for which the meet has already been computed.
 
 We define $\mathrm{meet}_{S}$ as follows:
 \begin{itemize}
-    \item $\meet_S(e_1, e_2, \sigma, C) = (\bot, \sigma)$ where $(e_1, e_2) \in C$ or $(e_2, e_1) \in C$
-    \item $\meet_S(e,e,\sigma,C) = \meet_{S}(e, \top, \sigma, C) = \meet_{S}(\top, e, \sigma, C) = (e, \sigma)$
-    \item $\meet_S(t, e_1, \sigma, C) = \meet_S(e_1, t, \sigma, C) = \meet_S(e_1,e_2,\sigma,C')$\\
-        where $t \doteq e_2 \in S$ and $C' = C \cup \{(t, e_1)\}$
-    \item $\meet_{S}(e_1, e_2, \sigma, C) = \meet_{S}(e_2, e_1, \sigma, C) = (e', \{v' \mapsto \sigma'(v') \mid v' \neq v \in V\} \cup \{v \mapsto e'\})$\\
-        where $v \in V$, $C' = C \cup \{(e_1, e_2)\}$, and $(e', \sigma') = \meet_{S}(\sigma(v), e_2, \sigma, C')$
-    \item $\meet_S(e, e_1 \mid \dots \mid e_n, \sigma, C) = \meet_S(e_1 \mid \dots \mid e_n, e, \sigma, C) = (e_{i_1}' \mid \dots \mid e_{i_k}', \sigma_{i_1} \sqcup \dots \sqcup \sigma_{i_k})$ \\
-        where $C' = C \cup \{(e, e_1 \mid \dots \mid e_n)\}$, $(e_i',\sigma_i) = \meet_S(e_i,e,\sigma,C')$, and $i_j$ are all the indices such that $e_{i_j}' \neq \bot$
-    \item $\meet_S(f(e_1,\dots,e_n),\mathbb{F},\sigma,C) = (f(e_1,\dots,e_n), \sigma)$
-    \item $\meet_S(f(e_1,\dots,e_n),t,\sigma,C) = \begin{cases} (t,\sigma') & e' \neq \bot \\ (\bot,\sigma') & \text{otherwise} \end{cases}$\\
-        where $t \lessdot e \in S$, $t \neq \mathbb{N}$, $t \neq \mathbb{F}$, $C' = C \cup \{(f(e_1,\dots,e_n), t)\}$, and $(e',\sigma') = \meet_S(f(e_1,\dots,e_n),e,\sigma,C')$
-    \item $\meet_S(f(e_1,\dots,e_n),f(g_1,\dots,g_n), \sigma, C) = \begin{cases} (f(h_1,\dots,h_n),\sigma_n) & \text{all } h_i \neq \bot \\ (\bot,\sigma_n) & \text{otherwise} \end{cases}$
-        where $C' = C \cup \{(f(e_1,\dots,e_n), f(g_1,\dots,g_n))\}$, $\sigma_0 = \sigma$ and $(h_i, \sigma_i) = \meet_S(e_i,g_i,\sigma_{i-1}, C')$
-    \item $\meet_S(t_1,t_2,\sigma,C) = \begin{cases} (t_2, \sigma) & t_1 \text{ is a reachable super type of } t_2 \text{ in } S \\ (t_1, \sigma) & t_2 \text{ is a reachable super type of } t_1 \text{ in } S \\ (\bot,\sigma) & \text{otherwise} \end{cases}$\\
-        where $t_1 \lessdot e_1, t_2 \lessdot e_2 \in S$ and $C' = C \cup \{(t_1, t_2)\}$
-    \item $\meet_S(e_1,e_2,\sigma,C) = (\bot,\sigma)$, otherwise
+	\item $\meet_{S}(e, \top, \sigma, C) = \meet_{S}(\top, e, \sigma, C) = (e, \sigma)$
+	\item $\meet_S(t, e_1, \sigma, C) = \meet_S(e_1, t, \sigma, C) = \meet_S(e_1,e_2,\sigma,C\cup\{(t,e_1)\})$\\
+	      where $t \doteq e_2 \in S$ and $(t,e_1) \notin C$
+	\item $\meet_{S}(v, e, \sigma, C) = \meet_{S}(e, v, \sigma, C) = (e', \{v' \mapsto \sigma'(v') \mid v' \neq v \in V\} \cup \{v \mapsto e'\})$\\
+	      where $v \in V$, and $(e', \sigma') = \meet_{S}(\sigma(v), e, \sigma, C)$
+	\item $\meet_S(e, e_1 \mid \dots \mid e_n, \sigma, C) = \meet_S(e_1 \mid \dots \mid e_n, e, \sigma, C) = (e_{i_1}' \mid \dots \mid e_{i_k}', \sigma_{i_1} \sqcup \dots \sqcup \sigma_{i_k})$ \\
+	      where $(e_i',\sigma_i) = \meet_S(e_i,e,\sigma,C)$ and $i_j$ are all the indices such that $e_{i_j}' \neq \bot$
+	\item $\meet_S(f(e_1,\dots,e_n),\mathbb{F},\sigma,C) = \meet_S(\mathbb{F}, f(e_1,\dots,e_n),\sigma,C) = (f(e_1,\dots,e_n), \sigma)$
+	\item $\meet_S(f(e_1,\dots,e_n),t,\sigma,C) = \meet_S(t,f(e_1,\dots,e_n),\sigma,C) = \begin{cases} (t,\sigma') & e' \neq \bot \\ (\bot,\sigma') & \text{otherwise} \end{cases}$\\
+	      where $t \lessdot e \in S$, $t \notin \{\mathbb{N}, \mathbb{F}\}$, $(t,f(e_1,\dots,e_n)) \notin C$, and $(e',\sigma') = \meet_S(f(e_1,\dots,e_n),e,\sigma,C \cup \{(t,f(e_1,\dots,e_n))\})$
+	\item $\meet_S(f(e_1,\dots,e_n),f(g_1,\dots,g_n), \sigma, C) = \begin{cases} (f(h_1,\dots,h_n),\sigma_n) & \text{all } h_i \neq \bot \\ (\bot,\sigma_n) & \text{otherwise} \end{cases}$\\
+	      where $\sigma_0 = \sigma$ and $(h_i, \sigma_i) = \meet_S(e_i,g_i,\sigma_{i-1}, C)$
+	\item $\meet_S(t_1,t_2,\sigma,C) = \begin{cases} (t_2, \sigma) & t_1 \text{ is a reachable super type of } t_2 \text{ in } S \\ (t_1, \sigma) & t_2 \text{ is a reachable super type of } t_1 \text{ in } S \\ (\bot,\sigma) & \text{otherwise} \end{cases}$\\
+	      where $t_1 \lessdot e_1, t_2 \lessdot e_2 \in S$
+	\item $\meet_S(e_1,e_2,\sigma,C) = (\bot,\sigma)$, otherwise
 \end{itemize}
-
-Note that the seen set prevents infinite recursion when computing meets of recursive types.
-Each pair of type expressions is seen at most once, so the computation always terminates.
 
 To give an idea how the meet computation is applied in typclingo,
 let $p(X), q(X)$ be some rule body.
