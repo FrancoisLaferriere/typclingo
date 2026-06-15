@@ -1,6 +1,7 @@
 \documentclass[a4paper]{amsart}
 \usepackage[margin=2cm]{geometry} % Adjust margin as needed
 
+\usepackage{todonotes}
 \usepackage{amsmath}
 \usepackage{amssymb}
 \usepackage{amsthm}
@@ -28,7 +29,7 @@ We omit the parentheses for function types if the arity is zero
 and type unions when there is no risk of ambiguity.
 We define $\bot$ as the empty type union.
 
-A \emph{type specification} $S$ is a set of expressions $t \lessdot e$ or $t \doteq e$
+A \emph{type specification} $S$ is a finite set of expressions $t \lessdot e$ or $t \doteq e$
 such that $t \in T$ and $e \in \mathcal{T}$ where $e$ does not contain type variables.
 
 We assume that the type constants always contain $\mathbb{F}$, $\mathbb{N}$ and $\mathbb{S}$.
@@ -86,7 +87,6 @@ we compute $\mathrm{meet}_{S}(p(x), p(e_1),\emptyset,\emptyset) = (e,\sigma)$.
 In the next step, we compute $\mathrm{meet}_{S}(q(x), q(e_2),\sigma,\emptyset) = (e',\sigma')$.
 If both $e$ and $e'$ are not $\bot$,
 then the body is well-typed and the type of $X$ is given by $\sigma'(x)$.
-
 
 \newpage
 \input{proof-termination}
