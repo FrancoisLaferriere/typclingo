@@ -1,18 +1,24 @@
 \documentclass[doc]{subfiles}
 \begin{document}
-\paragraph{Assumptions.}
-Throughout this section we assume that:
-
-\begin{itemize}
-	\item For every type variable $v$, the expression $\sigma(v)$ is variable-free.\todo[inline]{%
-		      This is not an assumption but an invariant that is easy to see.}
-\end{itemize}
-
 \begin{theorem}
 	For all type expressions $e_1$, $e_2$, type mappings $\sigma$, and guard sets $C$,
 	the computation $\meet_S(e_1,e_2,\sigma,C)$ terminates.
 \end{theorem}
 
+\todoin{
+	\begin{itemize}
+		\item invariants to show:
+		      \begin{enumerate}
+			      \item type variables are replaced exactly once during meet computation
+			      \item substitution $\sigma$ is variable free
+			      \item meet arguments draw from a finite set of expressions
+			            (the original input, the finite number of variable substitutions, the right hand sides of type definitions in $S$)
+		      \end{enumerate}
+		\item fixes
+		      \begin{itemize}
+			      \item invariants 1 and 2 allow us to fix the size estimate: we can use the unknown but fixed size of the term that is subsituted for the variable as the size for the variable
+		      \end{itemize}
+	\end{itemize}}
 \begin{proof}
 	Let $K$ be the set of type constants occurring in $S$.
 	Since $S$ is finite, so is $K$.
