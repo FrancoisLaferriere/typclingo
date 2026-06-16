@@ -1,4 +1,5 @@
 \documentclass[a4paper]{amsart}
+\usepackage{subfiles}
 \usepackage[margin=2cm]{geometry} % Adjust margin as needed
 
 \usepackage{todonotes}
@@ -7,9 +8,9 @@
 \usepackage{amsthm}
 \newtheorem{theorem}{Theorem}
 
-\begin{document}
-
 \newcommand\meet{\mathrm{meet}}
+
+\begin{document}
 
 The meet computation in typclingo.
 
@@ -41,7 +42,6 @@ Furthermore, type specifications always include:
 \end{itemize}
 
 Each type constant occurring on the right-hand side of a $\lessdot$ or $\doteq$ is defined exactly once.
-
 
 We let $\Sigma$ be the set of all \emph{type variable mappings} from type variables to type expressions.
 We assume that mappings $\sigma\in\Sigma$ map all variables in $V$ to some type expression.
@@ -89,5 +89,5 @@ If both $e$ and $e'$ are not $\bot$,
 then the body is well-typed and the type of $X$ is given by $\sigma'(x)$.
 
 \newpage
-\input{proof-termination}
+\subfile{proof-termination}
 \end{document}

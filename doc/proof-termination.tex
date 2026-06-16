@@ -1,8 +1,11 @@
+\documentclass[doc]{subfiles}
+\begin{document}
 \paragraph{Assumptions.}
 Throughout this section we assume that:
 
 \begin{itemize}
-	\item For every type variable $v$, the expression $\sigma(v)$ is variable-free.
+	\item For every type variable $v$, the expression $\sigma(v)$ is variable-free.\todo[inline]{%
+		      This is not an assumption but an invariant that is easy to see.}
 \end{itemize}
 
 \begin{theorem}
@@ -11,7 +14,6 @@ Throughout this section we assume that:
 \end{theorem}
 
 \begin{proof}
-
 	Let $K$ be the set of type constants occurring in $S$.
 	Since $S$ is finite, so is $K$.
 	Every recursive call of $\meet_S$ either unfolds a type definition,
@@ -22,81 +24,78 @@ Throughout this section we assume that:
 	Consequently, only finitely many expressions can occur as arguments of recursive calls.\todo[inline]{%
 		This is clearly not correct, meet constructs type expressions, which are used as arguments to recursive calls.
 		I also do not see how we can say that only a finite number of expressions $\sigma(v)$ can occur,
-		this would only be true if the algorithm terminates, which is what we are trying to prove.}
-	Since both $K$ and the set of possible recursive-call arguments are finite, only finitely many guard pairs $(t,e)$ can arise during the computation. Let $N$ denote this number.
-	We define
+		this would only be true if the algorithm terminates, which is what we are trying to prove.
+		For example, the meet of $g(X,X,X)$  and $g(f(a|b),f(a|b),f(a|c))$ results in $\sigma(X)=f(a)$
+		where $f(a)$ is a fresh subexpressions.}
 
-	\[
-		g(C)=N-|C|.
-	\]
+	Since both $K$ and the set of possible recursive-call arguments are finite, only finitely many guard pairs $(t,e)$ can arise during the computation.
+	Let $N$ denote this number.
+	We define
+	\begin{align*}
+		g(C) & =N-|C|.
+	\end{align*}
 
 	Furthermore, let the size of a type expression be given by
-	\[
-		|\top|=|t|=|v|=1,\qquad
-		|f(e_1,\ldots,e_n)|=1+\sum_{i=1}^{n}|e_i|,\qquad
-		|e_1|\cdots|e_n|=1+\sum_{i=1}^{n}|e_i|.
-	\]
+	\begin{align*}
+		|\top|=|t|=|v|                                  & =1,                     \\
+		|f(e_1,\ldots,e_n)|                             & =1+\sum_{i=1}^{n}|e_i|, \\
+		\bigl\lvert e_1 \mid \cdots \mid e_n\bigr\rvert & =1+\sum_{i=1}^{n}|e_i|.
+	\end{align*}
 
 	For a pair of expressions, let
-	\[
-		s(e_1,e_2)=|e_1|+|e_2|.
-	\]
+	\begin{align*}
+		s(e_1,e_2) & =|e_1|+|e_2|.
+	\end{align*}
 
 	We use the lexicographic measure
-	\[
-		M(e_1,e_2,C)=\bigl(g(C),s(e_1,e_2)\bigr).
-	\]
+	\begin{align*}
+		M(e_1,e_2,C) & =\bigl(g(C),s(e_1,e_2)\bigr).
+	\end{align*}
 
 	Since $g(C)$ and $s(e_1,e_2)$ are natural numbers, the lexicographic order on $\mathbb N\times\mathbb N$ is well-founded.
 
 	We now inspect the recursive cases of $\meet_S$.
-
 	\begin{itemize}
-
 		\item \textbf{Type unfolding.}
 		      A recursive call of the form
-		      \[
-			      \meet_S(t,e,\sigma,C)\rightarrow\meet_S(e',e,\sigma,C\cup\{(t,e)\})
-		      \]
+		      \begin{align*}
+			      \meet_S(t,e,\sigma,C) & \rightarrow\meet_S(e',e,\sigma,C\cup\{(t,e)\})
+		      \end{align*}
 		      with $t=e'\in S$ and $(t,e)\notin C$ adds a fresh guard pair to $C$. Therefore the first component of $M$ strictly decreases.
-
 		\item \textbf{Subtype unfolding.}
 		      A recursive call of the form
-		      \[
-			      \meet_S(f(e_1,\ldots,e_n),t,\sigma,C)\rightarrow
+		      \begin{align*}
+			      \meet_S(f(e_1,\ldots,e_n),t,\sigma,C) & \rightarrow
 			      \meet_S(f(e_1,\ldots,e_n),e,\sigma,C\cup\{(t,f(e_1,\ldots,e_n))\})
-		      \]
+		      \end{align*}
 		      with $t\sqsubseteq e\in S$ and $(t,f(e_1,\ldots,e_n))\notin C$ also adds a fresh guard pair and therefore
 		      strictly decreases the first component of $M$.
-
 		\item \textbf{Variable expansion.}
 		      A recursive call of the form
-		      \[
-			      \meet_S(v,e,\sigma,C)\rightarrow\meet_S(\sigma(v),e,\sigma,C)
-		      \]
+		      \begin{align*}
+			      \meet_S(v,e,\sigma,C) & \rightarrow\meet_S(\sigma(v),e,\sigma,C)
+		      \end{align*}
 		      replaces the variable $v$ by its value. Since $\sigma(v)$ is variable-free, the recursive call cannot itself match
 		      the variable-expansion case. Thus every variable expansion is immediately followed by one of the remaining cases.
-
 		\item \textbf{Union decomposition.}
 		      For a call of the form $\meet_S(e_1|\cdots|e_n,e,\sigma,C)$, recursive calls are performed on
 		      the pairs $(e_i,e)$. Since every $e_i$ is a strict subexpression of $e_1|\cdots|e_n$,
 		      we have $s(e_i,e)<s(e_1|\cdots|e_n,e)$. Thus the second component of $M$ strictly decreases while the first component remains unchanged.
-
 		\item \textbf{Function decomposition.}
 		      For a call of the form $\meet_S(f(e_1,\ldots,e_n),f(g_1,\ldots,g_n),\sigma,C)$, recursive calls are performed
 		      on the pairs $(e_i,g_i)$. Since $e_i$ and $g_i$ are strict subexpressions of the original function types, we have
-		      \[
-			      s(e_i,g_i)<s(f(e_1,\ldots,e_n),f(g_1,\ldots,g_n)).
-		      \]
+		      \begin{align*}
+			      s(e_i,g_i) & <s(f(e_1,\ldots,e_n),f(g_1,\ldots,g_n)).
+		      \end{align*}
 		      Hence the second component of $M$ strictly decreases while the first component remains unchanged.
 
 	\end{itemize}
-
 	All remaining cases perform no recursive calls and therefore terminate immediately.
 
 	Thus every recursive call either strictly decreases the first component of $M$, strictly decreases the second component
 	while leaving the first unchanged, or is a variable expansion that immediately reduces to one of the previous cases.
 	Consequently, every infinite computation would yield an infinite descending chain in the well-founded order on
 	$\mathbb N\times\mathbb N$, which is impossible. Therefore $\meet_S(e_1,e_2,\sigma,C)$ terminates.
-
 \end{proof}
+
+\end{document}
