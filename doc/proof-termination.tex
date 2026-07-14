@@ -1,4 +1,5 @@
 \documentclass[doc]{subfiles}
+
 \begin{document}
 
 \section*{Termination of the meet computation}
@@ -8,31 +9,27 @@
 	This is clear if no variable expansion occurs:
 	every recursive call then receives either a subterm of a current argument
 	or a definition body from $S$.
-	Variable expansion is the only case that introduces an expression from outside this set.
-
-	Assuming one of the initial arguments and the initial mapping are variable-free,
-	at most one variable expansion can occur on a branch,
-	since afterwards both arguments are variable-free and remain so.
-	Splitting a branch at that expansion gives two segments,
-	each with a finite argument set, hence a finite guard.
-
-	Within a segment, unfoldings strictly grow the guard
-	and the decomposition cases strictly shrink the arguments,
-	which yields a well-founded measure and terminates the branch.}
+	In this case, the call guard set prevents infinite unfolding of recursive types.
+	Variable expansion is the only case that introduces expressions from outside this set.
+	Assuming that at least one of the initial type-expression arguments
+	and the initial mapping are variable-free,
+	at most one variable expansion can occur along branches.
+	After that expansion, both arguments are variable-free and remain so.
+	Hence termination reduces to the variable-free case.}
 
 \subsection*{Definitions}
 
-For a type expression $e$, the set $\mathrm{Sub}(e)$ of its \emph{subterms} is defined by
+For a type expression $e$, the set $\subexp(e)$ of its \emph{subterms} is defined by
 \[
-	\mathrm{Sub}(e) = \{e\} \cup
+	\subexp(e) = \{e\} \cup
 	\begin{cases}
-		\bigcup_{i} \mathrm{Sub}(e_i) & \text{if } e = f(e_1,\dots,e_n) \text{ or } e = e_1 \mid \dots \mid e_n \\
-		\emptyset                     & \text{otherwise.}
+		\bigcup_{i=1}^n \subexp(e_i) & \text{if } e = f(e_1,\dots,e_n) \text{ or } e = e_1 \mid \dots \mid e_n, \\
+		\emptyset                    & \text{otherwise.}
 	\end{cases}
 \]
 
 
-Let $S_{\mathrm{sub}} = \bigcup_{(t \lessdot e) \,\lor\, (t \doteq e) \in S} \mathrm{Sub}(e)$
+Let $S_{\mathrm{sub}} = \bigcup_{(t \lessdot e) \in S\ \text{or}\ (t \doteq e) \in S} \subexp(e)$
 be the set of subterms of all definition bodies. It is finite.
 
 For a type expression $e$, its \emph{size} is defined by
@@ -87,7 +84,7 @@ A \emph{var-step} is a step using variable expansion.
 		\item \textbf{Terminal cases.} No recursive call.
 	\end{itemize}
 
-\emph{Proof of (ii).} By induction on the height of the subtree rooted at the call.
+	\emph{Proof of (ii).} By induction on the height of the subtree rooted at the call.
 	By (i), variable expansion never applies in the tree,
 	so every case returns $\sigma$, the mapping of a recursive call,
 	or a join of such mappings, all variable-free
@@ -181,7 +178,7 @@ so a call satisfying the hypothesis may well return an expression containing var
 	$\meet_S(\hat e_1,\hat e_2,\hat\sigma,\hat C)$ in which no var-step occurs.
 	Then every argument of every call in that sequence lies in
 	\[
-		P = \mathrm{Sub}(\hat e_1) \cup \mathrm{Sub}(\hat e_2) \cup S_{\mathrm{sub}}.
+		P = \subexp(\hat e_1) \cup \subexp(\hat e_2) \cup S_{\mathrm{sub}}.
 	\]
 \end{lemma}
 
@@ -231,7 +228,7 @@ so a call satisfying the hypothesis may well return an expression containing var
 	Since the segment is a sequence of calls along a branch in which no var-step occurs,
 	Lemma~\ref{lem:pool} applies, and every argument in the segment lies in the finite set
 	\[
-		P = \mathrm{Sub}(a_1) \cup \mathrm{Sub}(a_2) \cup S_{\mathrm{sub}}.
+		P = \subexp(a_1) \cup \subexp(a_2) \cup S_{\mathrm{sub}}.
 	\]
 	The second component of a guard pair is an argument,
 	so every pair added to $C$ within the segment lies in $T \times P$.

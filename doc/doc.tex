@@ -13,7 +13,7 @@
 \newcommand\meet{\mathrm{meet}}
 \newcommand\todoin[2][]{\todo[inline, caption={2do}, #1]{
         \begin{minipage}{\textwidth-4pt}#2\end{minipage}}}
-
+\newcommand\subexp{\mathrm{subexp}}
 
 \begin{document}
 
@@ -56,10 +56,10 @@ Given $\sigma_1, \sigma_2 \in \Sigma$, we let $\sigma_1 \sqcup \sigma_2$ be the 
 $(\sigma_1 \sqcup \sigma_2)(v) = \sigma_1(v) \mid \sigma_2(v)$ for all $v \in V$.
 
 To handle recursive types,
-we use a call guard set $C \subseteq T \times \mathcal{T}$ of pairs of type constants and type expressions
+we use a \emph{call guard set} $C \subseteq T \times \mathcal{T}$ of pairs of type constants and type expressions
 for which the meet is currently being computed.
 Function $\mathrm{meet}_{S}: \mathcal{T} \times \mathcal{T} \times \Sigma \times C \mapsto \mathcal{T} \times \Sigma$
-computes the \emph{meet} of two type expressions given a type variable mapping, a type specification $S$, and a call guard set $C$.
+computes the \emph{meet} of two type expressions given a variable mapping and a call guard set $C$ w.r.t. a fixed type specification $S$.
 The result is a new type expression and an updated type variable mapping.
 
 We define $\mathrm{meet}_{S}$ as follows:
