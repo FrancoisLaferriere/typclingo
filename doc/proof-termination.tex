@@ -32,6 +32,9 @@ For a type expression $e$, the set $\subexp(e)$ of its \emph{subterms} is define
 Let $S_{\mathrm{sub}} = \bigcup_{(t \lessdot e) \in S\ \text{or}\ (t \doteq e) \in S} \subexp(e)$
 be the set of subterms of all definition bodies. It is finite.
 
+Let $T_S = \{\, t : (t \lessdot e) \in S \text{ or } (t \doteq e) \in S \,\}$
+be the constants defined in $S$. $T_S$ is finite, since $S$ is.
+
 For a type expression $e$, its \emph{size} is defined by
 \[
 	\mathrm{size}(e) =
@@ -70,7 +73,12 @@ A \emph{var-step} is a step using variable expansion.
 \end{lemma}
 
 \begin{proof}
-	\emph{Proof of (i).} By induction along the tree.
+    (i) and (ii) are proved together by induction on the order in which calls are issued and completed.
+	Every appeal is to an earlier point in this order: (i) at a call uses (i) at its parent
+	and (ii) at an earlier recursive call, which has returned; (ii) uses (i) at the same call and
+	(ii) at its recursive calls.
+
+	\emph{Proof of (i).}
 	The root holds by hypothesis. Assume it at a call.
 	\begin{itemize}
 		\item \textbf{Variable expansion.} Cannot apply, as neither argument is a bare variable.
@@ -78,13 +86,18 @@ A \emph{var-step} is a step using variable expansion.
 		      The recursive call receives one current argument, which is variable-free,
 		      and a definition body, which is variable-free because type specifications contain no variables.
 		      The mapping $\sigma$ is unchanged.
-		\item \textbf{Union decomposition, Function decomposition.}
-		      The recursive calls receive subterms of $e_1$ and $e_2$, which are variable-free.
-		      The mapping $\sigma$ is unchanged.
+		\item \textbf{Union decomposition.}
+		      The recursive calls receive subterms of $e_1$ and $e_2$, which are variable-free,
+		      and the mapping $\sigma$, unchanged.
+		\item \textbf{Function decomposition.}
+		      The $i$-th recursive call receives subterms of $e_1$ and $e_2$, which are variable-free.
+		      Its mapping $\sigma_{i-1}$ is variable-free:
+		      for $i = 1$ it is $\sigma_0 = \sigma$,
+		      and for $i > 1$ it is returned by the $(i-1)$-st recursive call, to which (ii) applies.
 		\item \textbf{Terminal cases.} No recursive call.
 	\end{itemize}
 
-	\emph{Proof of (ii).} By induction on the height of the subtree rooted at the call.
+\emph{Proof of (ii).}
 	By (i), variable expansion never applies in the tree,
 	so every case returns $\sigma$, the mapping of a recursive call,
 	or a join of such mappings, all variable-free
@@ -117,8 +130,10 @@ A \emph{var-step} is a step using variable expansion.
 \end{lemma}
 
 \begin{proof}
-	Claim (i) is proved by induction along the tree,
-	claim (ii) by induction on the height of the subtree rooted at the call.
+    (i) and (ii) are proved together by induction on the order in which calls are issued and completed.
+	Every appeal is to an earlier point in this order: (i) at a call uses (i) at its parent
+	and (ii) at an earlier recursive call, which has returned; (ii) uses (i) at the same call and
+	(ii) at its recursive calls.
 
 	\emph{Proof of (i).} The root satisfies the claim by hypothesis.
 	Assume the claim at a call.
@@ -207,7 +222,7 @@ so a call satisfying the hypothesis may well return an expression containing var
 
 \begin{proof}
 	A var-step requires an argument that is a bare variable.
-	By Lemma~\ref{lem:onesided}, at such a call the mapping $\sigma$ is variable-free
+	By Lemma~\ref{lem:onesided}(i), at such a call the mapping $\sigma$ is variable-free
 	and the other argument is variable-free.
 	Hence the recursive call has both arguments and its mapping variable-free.
 	By Lemma~\ref{lem:absorbing}(i), applied to the subtree rooted at that call,
@@ -230,11 +245,12 @@ so a call satisfying the hypothesis may well return an expression containing var
 	\[
 		P = \subexp(a_1) \cup \subexp(a_2) \cup S_{\mathrm{sub}}.
 	\]
-	The second component of a guard pair is an argument,
-	so every pair added to $C$ within the segment lies in $T \times P$.
+    Every pair added to $C$ arises from an unfolding. Its first component is the unfolded constant,
+	which is defined in $S$, and its second is an argument.
+	So every pair added within the segment lies in $T_S \times P$, a finite set.
 	For a call $\meet_S(e_1,e_2,\sigma,C)$ of the segment, consider the measure
 	\[
-		M = \Big(\ \big|(T \times P) \setminus C\big| \ ,\ \ \mathrm{size}(e_1) + \mathrm{size}(e_2) \ \Big) \in \mathbb{N}^2,
+		M = \Big(\ \big|(T_S \times P) \setminus C\big| \ ,\ \ \mathrm{size}(e_1) + \mathrm{size}(e_2) \ \Big) \in \mathbb{N}^2,
 	\]
 	ordered lexicographically.
 	\begin{itemize}
