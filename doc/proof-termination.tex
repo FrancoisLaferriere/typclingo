@@ -62,6 +62,134 @@ A \emph{var-step} is a step using variable expansion.
 
 \subsection*{Lemmas}
 
+\begin{lemma}[variable-freeness invariant]
+	Let $S$ be a type specification,
+	$\sigma \in \Sigma$,
+	and $C \subseteq T \times \mathcal{T}$.
+
+	If type expressions $e_1$ and $e_2$ are variable-free,
+	then for every subcall $\meet_S(e_1',e_2',\sigma',C')$
+	reachable during the evaluation of $\meet_S(e_1,e_2,\sigma,C)$,
+	both $e_1'$ and $e_2'$ are variable-free.
+\end{lemma}
+
+\begin{proof}
+	By inspection of the definition of $\meet_S$,
+	variable-freeness of the first two arguments is preserved under direct recursive subcalls.
+	Since the initial call $\meet_S(e_1,e_2,\sigma,C)$ has variable-free
+	first two arguments, it follows that every reachable subcall
+	$\meet_S(e_1',e_2',\sigma',C')$ also has variable-free first two
+	arguments.
+\end{proof}
+
+If the type expressions in all recursive calls are variable-free,
+we obtain the following corollary.
+
+\begin{corollary}
+	There is no variable expansion step during the evaluation of a meet with
+	two variable-free type expressions.
+\end{corollary}
+
+The next invariant shows that we can restrict attention to a finite set of type
+expressions when analyzing the meet computation.
+
+\begin{lemma}[finite arguments invariant]
+	Let $S$ be a type specification,
+	$\sigma \in \Sigma$,
+	$C \subseteq T \times \mathcal{T}$,
+	and $P = \subexp(e_1) \cup \subexp(e_2) \cup \subexp(S)$.
+
+	If type expressions $e_1$ and $e_2$ are variable-free,
+	then for every subcall $\meet_S(e_1',e_2',\sigma',C')$
+	reachable during the evaluation of $\meet_S(e_1,e_2,\sigma,C)$,
+	$e_1',e_2' \in P$.
+\end{lemma}
+
+\begin{proof}
+	Since there is no variable expansion step during the evaluation of a meet with
+	two variable-free type expressions, every subcall receives either a subterm of
+	one of the current arguments or a definition body from $S$. Therefore, all
+	arguments of all reachable subcalls are contained in the finite set $P$.
+\end{proof}
+
+\begin{lemma}
+	Let $S$ be a type specification,
+	$\sigma \in \Sigma$,
+	and $C \subseteq T \times \mathcal{T}$.
+
+	If type expressions $e_1$ and $e_2$ are variable-free,
+	then the meet computation $\meet_S(e_1,e_2,\sigma,C)$ terminates.
+\end{lemma}
+
+\begin{proof}
+	Proof idea: we are either increasing the call guard set $C$ or decreasing
+	the size of the type expression arguments. Since both are finite, we cannot
+	have an infinite sequence of recursive calls.
+\end{proof}
+
+\begin{lemma}[one-sided variable-freeness invariant]
+	Let $S$ be a type specification,
+	$\sigma \in \Sigma$,
+	and $C \subseteq T \times \mathcal{T}$.
+
+	If at least one of the expressions $e_1$ and $e_2$ is variable-free,
+	then for every subcall $\meet_S(e_1',e_2',\sigma',C')$
+	reachable during the evaluation of $\meet_S(e_1,e_2,\sigma,C)$,
+	at least one of the expressions $e_1'$ and $e_2'$ is variable-free.
+\end{lemma}
+
+\begin{proof}
+	By inspection of the definition of $\meet_S$, it suffices to show that
+	the property of having at least one variable-free expression among the
+	first two arguments is preserved under direct recursive subcalls.
+
+	This is immediate for all recursive cases except variable expansion,
+	where a substitution is applied to a variable and the meet is computed
+	between the substituted expression and the other argument:
+	$\meet_S(v,e,\sigma,C)$.
+	Since at least one of the two arguments of the current call is
+	variable-free, the expression $e$ must be variable-free. Hence, the
+	subsequent call $\meet_S(\sigma(v),e,\sigma,C)$ preserves the invariant.
+\end{proof}
+
+\begin{lemma}[variable-free substitutions are preserved on return]
+	Let $S$ be a type specification, $\sigma \in \Sigma$, and $C \subseteq T \times \mathcal{T}$.
+
+	If at least one of the expressions $e_1$ and $e_2$ is variable-free and
+	$\sigma$ is variable-free, then every terminating evaluation of
+	$\meet_S(e_1,e_2,\sigma,C)$ returns a variable-free substitution.
+\end{lemma}
+
+\begin{proof}
+	Proof idea: we prove the lemma by induction over the finite call tree depth
+	of the terminating evaluation.
+\end{proof}
+
+\begin{lemma}[variable-free substitution invariant]
+	Let $S$ be a type specification, $\sigma \in \Sigma$, and $C \subseteq T \times \mathcal{T}$.
+
+	If at least one of the expressions $e_1$ and $e_2$ is variable-free
+	and $\sigma$ is variable-free,
+	then for every subcall $\meet_S(e_1',e_2',\sigma',C')$
+	reachable during the evaluation of $\meet_S(e_1,e_2,\sigma,C)$,
+	the substitution $\sigma'$ is variable-free.
+\end{lemma}
+
+\begin{proof}
+	Proof idea: The meet computation either directly forwards a variable-free
+	substitution or uses a variable-free substitution returned by a recursive
+	call in subsequent meet computations.
+\end{proof}
+
+Things to do:
+\begin{itemize}
+	\item each variable occurrence is expanded at most once with a variable-free expression
+	\item we can construct a finite argument pool similar to the variable-free
+	      case, but with the addition of the variable-free expression that is
+	      used to expand the variable occurrences
+	\item with this we can prove termination analogue to the variable-free case
+\end{itemize}
+
 \begin{lemma}[variable-freeness is absorbing]\label{lem:absorbing}
 	Let $\hat e_1,\hat e_2 \in \mathcal{T}$ and $\hat\sigma \in \Sigma$ be variable-free,
 	and let $\hat C \subseteq T \times \mathcal{T}$.
@@ -73,7 +201,7 @@ A \emph{var-step} is a step using variable expansion.
 \end{lemma}
 
 \begin{proof}
-    (i) and (ii) are proved together by induction on the order in which calls are issued and completed.
+	(i) and (ii) are proved together by induction on the order in which calls are issued and completed.
 	Every appeal is to an earlier point in this order: (i) at a call uses (i) at its parent
 	and (ii) at an earlier recursive call, which has returned; (ii) uses (i) at the same call and
 	(ii) at its recursive calls.
@@ -97,7 +225,7 @@ A \emph{var-step} is a step using variable expansion.
 		\item \textbf{Terminal cases.} No recursive call.
 	\end{itemize}
 
-\emph{Proof of (ii).}
+	\emph{Proof of (ii).}
 	By (i), variable expansion never applies in the tree,
 	so every case returns $\sigma$, the mapping of a recursive call,
 	or a join of such mappings, all variable-free
@@ -130,7 +258,7 @@ A \emph{var-step} is a step using variable expansion.
 \end{lemma}
 
 \begin{proof}
-    (i) and (ii) are proved together by induction on the order in which calls are issued and completed.
+	(i) and (ii) are proved together by induction on the order in which calls are issued and completed.
 	Every appeal is to an earlier point in this order: (i) at a call uses (i) at its parent
 	and (ii) at an earlier recursive call, which has returned; (ii) uses (i) at the same call and
 	(ii) at its recursive calls.
@@ -245,7 +373,7 @@ so a call satisfying the hypothesis may well return an expression containing var
 	\[
 		P = \subexp(a_1) \cup \subexp(a_2) \cup S_{\mathrm{sub}}.
 	\]
-    Every pair added to $C$ arises from an unfolding. Its first component is the unfolded constant,
+	Every pair added to $C$ arises from an unfolding. Its first component is the unfolded constant,
 	which is defined in $S$, and its second is an argument.
 	So every pair added within the segment lies in $T_S \times P$, a finite set.
 	For a call $\meet_S(e_1,e_2,\sigma,C)$ of the segment, consider the measure
