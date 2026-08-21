@@ -28,8 +28,7 @@ For a type expression $e$, the set $\subexp(e)$ of its \emph{subterms} is define
 	\end{cases}
 \]
 
-
-Let $S_{\mathrm{sub}} = \bigcup_{(t \lessdot e) \in S\ \text{or}\ (t \doteq e) \in S} \subexp(e)$
+For a type specification $S$, let $\subexp(S) = \bigcup_{(t \lessdot e)\in S\,\text{or}\,(t \doteq e)\in S} \subexp(e)$
 be the set of subterms of all definition bodies. It is finite.
 
 Let $T_S = \{\, t : (t \lessdot e) \in S \text{ or } (t \doteq e) \in S \,\}$
@@ -39,7 +38,7 @@ For a type expression $e$, its \emph{size} is defined by
 \[
 	\mathrm{size}(e) =
 	\begin{cases}
-		1 + \sum_{i} \mathrm{size}(e_i) & \text{if } e = f(e_1,\dots,e_n) \text{ or } e = e_1 \mid \dots \mid e_n \\
+		1 + \sum_{i=1}^n \mathrm{size}(e_i) & \text{if } e = f(e_1,\dots,e_n) \text{ or } e = e_1 \mid \dots \mid e_n, \\
 		1                               & \text{otherwise.}
 	\end{cases}
 \]
@@ -47,22 +46,13 @@ For a type expression $e$, its \emph{size} is defined by
 An expression is \emph{variable-free} if no type variable occurs in it.
 A mapping $\sigma \in \Sigma$ is \emph{variable-free} if $\sigma(v)$ is variable-free for every $v \in V$.
 
-For reference in the termination proof, we name the cases of $\meet_S$ in the order they are defined:
-\emph{top}, \emph{type unfolding}, \emph{variable expansion}, \emph{union decomposition},
-\emph{function type}, \emph{subtype unfolding}, \emph{function decomposition},
-\emph{constants}, and \emph{fall-through}.
-The \emph{recursive calls} of a case are the applications of $\meet_S$ occurring on its right-hand side.
-The cases \emph{top}, \emph{function type}, \emph{constants}, and \emph{fall-through} make no recursive call,
-and we refer to them collectively as the \emph{terminal cases}.
-
-The \emph{call tree} of $\meet_S(\hat e_1,\hat e_2,\hat\sigma,\hat C)$ has that call as its root,
+The \emph{call tree} of $\meet_S(e_1, e_2, \sigma, C)$ has that call as its root,
 and at each node the recursive calls made by the applicable case as its children.
 We identify termination of $\meet_S$ with finiteness of its call tree.
-A \emph{var-step} is a step using variable expansion.
 
 \subsection*{Lemmas}
 
-\begin{lemma}[variable-freeness invariant]
+\begin{lemma}[variable-freeness invariant]\label{lem:vfree-inv}
 	Let $S$ be a type specification,
 	$\sigma \in \Sigma$,
 	and $C \subseteq T \times \mathcal{T}$.
@@ -85,7 +75,7 @@ A \emph{var-step} is a step using variable expansion.
 If the type expressions in all recursive calls are variable-free,
 we obtain the following corollary.
 
-\begin{corollary}
+\begin{corollary}[no variable expansion]\label{cor:novarexp}
 	There is no variable expansion step during the evaluation of a meet with
 	two variable-free type expressions.
 \end{corollary}
@@ -93,7 +83,7 @@ we obtain the following corollary.
 The next invariant shows that we can restrict attention to a finite set of type
 expressions when analyzing the meet computation.
 
-\begin{lemma}[finite arguments invariant]
+\begin{lemma}[variable-free argument pool]\label{lem:vfree-pool}
 	Let $S$ be a type specification,
 	$\sigma \in \Sigma$,
 	$C \subseteq T \times \mathcal{T}$,
@@ -106,13 +96,13 @@ expressions when analyzing the meet computation.
 \end{lemma}
 
 \begin{proof}
-	Since there is no variable expansion step during the evaluation of a meet with
-	two variable-free type expressions, every subcall receives either a subterm of
-	one of the current arguments or a definition body from $S$. Therefore, all
-	arguments of all reachable subcalls are contained in the finite set $P$.
+	By Corollary~\ref{cor:novarexp} there is no variable expansion step during the
+	evaluation of a meet with two variable-free type expressions, so every subcall
+	receives either a subterm of one of the current arguments or a definition body from
+	$S$. Therefore, all arguments of all reachable subcalls are contained in the finite set $P$.
 \end{proof}
 
-\begin{lemma}
+\begin{lemma}[variable-free termination]\label{lem:vfree-term}
 	Let $S$ be a type specification,
 	$\sigma \in \Sigma$,
 	and $C \subseteq T \times \mathcal{T}$.
@@ -122,12 +112,28 @@ expressions when analyzing the meet computation.
 \end{lemma}
 
 \begin{proof}
-	Proof idea: we are either increasing the call guard set $C$ or decreasing
-	the size of the type expression arguments. Since both are finite, we cannot
-	have an infinite sequence of recursive calls.
+	By Lemma~\ref{lem:vfree-pool} every argument of every reachable call lies in the finite set
+    \[
+        P = \subexp(e_1) \cup \subexp(e_2) \cup \subexp(S),
+    \]
+	so every guard pair added during the evaluation lies in the finite set $T_S \times P$.
+	For a call $\meet_S(e_1',e_2',\sigma',C')$ consider the measure
+	\[
+		M = \Big(\ \big|(T_S \times P) \setminus C'\big| \ ,\ \ \mathrm{size}(e_1') + \mathrm{size}(e_2') \ \Big) \in \mathbb{N}^2,
+	\]
+	ordered lexicographically.
+	By Corollary~\ref{cor:novarexp} no variable expansion occurs.
+	Each recursive call either adds a pair to $C$ that was not already present,
+	strictly decreasing the first component of $M$,
+	or leaves $C$ unchanged and receives strict subterms of the current arguments,
+	strictly decreasing the second component.
+	Thus $M$ strictly decreases from each call to every call it makes,
+	and the lexicographic order on $\mathbb{N}^2$ is well-founded, so the call tree has no infinite path.
+	Since each case makes finitely many recursive calls, the tree is finitely branching,
+	hence finite by K\"onig's lemma, and the evaluation terminates.
 \end{proof}
 
-\begin{lemma}[one-sided variable-freeness invariant]
+\begin{lemma}[one-sided variable-freeness invariant]\label{lem:onesided}
 	Let $S$ be a type specification,
 	$\sigma \in \Sigma$,
 	and $C \subseteq T \times \mathcal{T}$.
@@ -137,22 +143,31 @@ expressions when analyzing the meet computation.
 	reachable during the evaluation of $\meet_S(e_1,e_2,\sigma,C)$,
 	at least one of the expressions $e_1'$ and $e_2'$ is variable-free.
 \end{lemma}
-
 \begin{proof}
-	By inspection of the definition of $\meet_S$, it suffices to show that
-	the property of having at least one variable-free expression among the
-	first two arguments is preserved under direct recursive subcalls.
-
-	This is immediate for all recursive cases except variable expansion,
-	where a substitution is applied to a variable and the meet is computed
-	between the substituted expression and the other argument:
-	$\meet_S(v,e,\sigma,C)$.
-	Since at least one of the two arguments of the current call is
-	variable-free, the expression $e$ must be variable-free. Hence, the
-	subsequent call $\meet_S(\sigma(v),e,\sigma,C)$ preserves the invariant.
+	It suffices to check that each recursive call preserves having a variable-free argument.
+	This is immediate except in variable expansion, $\meet_S(v,e,\sigma,C)$, where $v$ is a bare
+	variable, so the hypothesis forces the other argument $e$ to be variable-free.
+	The recursive call $\meet_S(\sigma(v),e,\sigma,C)$ then still has the variable-free argument $e$.
 \end{proof}
 
-\begin{lemma}[variable-free substitutions are preserved on return]
+\begin{lemma}[variable-free results]\label{lem:vfree-result}
+	Let $S$ be a type specification, $\sigma \in \Sigma$ variable-free,
+	and $C \subseteq T \times \mathcal{T}$, with $e_1$ and $e_2$ variable-free.
+	Then every terminating evaluation of $\meet_S(e_1,e_2,\sigma,C)$
+	returns a variable-free expression and a variable-free substitution.
+\end{lemma}
+\begin{proof}
+	By Corollary~\ref{cor:novarexp} variable expansion does not occur, so the substitution
+	is never altered and the returned substitution is $\sigma$, variable-free by hypothesis.
+	For the expression, argue by induction on the height of the finite call tree.
+	By Lemma~\ref{lem:vfree-inv} every reachable call has variable-free arguments,
+	so the induction hypothesis applies to each recursive call.
+	The returned expression is an argument, a constant, $\bot$, or an expression built from
+	the results of recursive calls. Arguments are variable-free by Lemma~\ref{lem:vfree-inv},
+	the others by the induction hypothesis.
+\end{proof}
+
+\begin{lemma}[variable-free substitutions are preserved on return]\label{lem:subreturn}
 	Let $S$ be a type specification, $\sigma \in \Sigma$, and $C \subseteq T \times \mathcal{T}$.
 
 	If at least one of the expressions $e_1$ and $e_2$ is variable-free and
@@ -161,11 +176,20 @@ expressions when analyzing the meet computation.
 \end{lemma}
 
 \begin{proof}
-	Proof idea: we prove the lemma by induction over the finite call tree depth
+	We prove the lemma by induction over the finite call tree depth
 	of the terminating evaluation.
+	The substitution is altered only by variable expansion, at $\meet_S(v,e,\sigma,C)$,
+	which returns $\{v' \mapsto \sigma'(v') : v' \neq v\} \cup \{v \mapsto e'\}$,
+	where $(e',\sigma')$ is the result of the recursive call $\meet_S(\sigma(v),e,\sigma,C)$.
+	By Lemma~\ref{lem:onesided} the argument $e$ is variable-free, and $\sigma(v)$ is variable-free
+	since $\sigma$ is, so that call has both arguments variable-free and terminates by
+	Lemma~\ref{lem:vfree-term}. By Lemma~\ref{lem:vfree-result} its results $e'$ and $\sigma'$ are variable-free,
+	so the returned substitution is variable-free.
+	Every other case returns $\sigma$ or a substitution returned by a recursive call,
+	or a join of such, all variable-free by the induction hypothesis.
 \end{proof}
 
-\begin{lemma}[variable-free substitution invariant]
+\begin{lemma}[variable-free substitution invariant]\label{lem:subinv}
 	Let $S$ be a type specification, $\sigma \in \Sigma$, and $C \subseteq T \times \mathcal{T}$.
 
 	If at least one of the expressions $e_1$ and $e_2$ is variable-free
@@ -176,238 +200,94 @@ expressions when analyzing the meet computation.
 \end{lemma}
 
 \begin{proof}
-	Proof idea: The meet computation either directly forwards a variable-free
-	substitution or uses a variable-free substitution returned by a recursive
-	call in subsequent meet computations.
+	By induction on the depth of the reachable calls. The root receives $\sigma$, variable-free by hypothesis.
+	Suppose a reachable call receives a variable-free mapping and consider the mappings its recursive calls receive.
+	In every case other than function decomposition each recursive call receives the current mapping unchanged,
+	which is variable-free.
+	In function decomposition the $i$-th recursive call $\meet_S(e_i,g_i,\sigma_{i-1},C')$ receives $\sigma_{i-1}$.
+	We show by induction on $i$ that each $\sigma_{i-1}$ is variable-free.
+	For $i=1$ it is the current mapping, variable-free.
+	For $i>1$ it is the mapping returned by the $(i-1)$-st recursive call.
+	Since the $i$-th call is reachable, the $(i-1)$-st has returned.
+	That call receives $\sigma_{i-2}$, variable-free by the inner induction hypothesis,
+	and has a variable-free argument by Lemma~\ref{lem:onesided},
+	so by Lemma~\ref{lem:subreturn} its returned mapping $\sigma_{i-1}$ is variable-free.
 \end{proof}
 
-Things to do:
-\begin{itemize}
-	\item each variable occurrence is expanded at most once with a variable-free expression
-	\item we can construct a finite argument pool similar to the variable-free
-	      case, but with the addition of the variable-free expression that is
-	      used to expand the variable occurrences
-	\item with this we can prove termination analogue to the variable-free case
-\end{itemize}
-
-\begin{lemma}[variable-freeness is absorbing]\label{lem:absorbing}
-	Let $\hat e_1,\hat e_2 \in \mathcal{T}$ and $\hat\sigma \in \Sigma$ be variable-free,
-	and let $\hat C \subseteq T \times \mathcal{T}$.
-	Then in the call tree of $\meet_S(\hat e_1,\hat e_2,\hat\sigma,\hat C)$:
-	\begin{enumerate}
-		\item[(i)] every call $\meet_S(e_1,e_2,\sigma,C)$ has $e_1$, $e_2$, and $\sigma$ variable-free, and
-		\item[(ii)] if a call returns $(e',\sigma')$, then $e'$ and $\sigma'$ are variable-free.
-	\end{enumerate}
+\begin{lemma}[at most one variable expansion per branch]\label{lem:onevar}
+	Let $S$ be a type specification, $\sigma \in \Sigma$ variable-free,
+	and $C \subseteq T \times \mathcal{T}$ with at least one of $e_1$ and $e_2$ variable-free,
+	then every branch of the evaluation of $\meet_S(e_1,e_2,\sigma,C)$
+	contains at most one variable expansion step.
 \end{lemma}
 
 \begin{proof}
-	(i) and (ii) are proved together by induction on the order in which calls are issued and completed.
-	Every appeal is to an earlier point in this order: (i) at a call uses (i) at its parent
-	and (ii) at an earlier recursive call, which has returned; (ii) uses (i) at the same call and
-	(ii) at its recursive calls.
-
-	\emph{Proof of (i).}
-	The root holds by hypothesis. Assume it at a call.
-	\begin{itemize}
-		\item \textbf{Variable expansion.} Cannot apply, as neither argument is a bare variable.
-		\item \textbf{Type unfolding, Subtype unfolding.}
-		      The recursive call receives one current argument, which is variable-free,
-		      and a definition body, which is variable-free because type specifications contain no variables.
-		      The mapping $\sigma$ is unchanged.
-		\item \textbf{Union decomposition.}
-		      The recursive calls receive subterms of $e_1$ and $e_2$, which are variable-free,
-		      and the mapping $\sigma$, unchanged.
-		\item \textbf{Function decomposition.}
-		      The $i$-th recursive call receives subterms of $e_1$ and $e_2$, which are variable-free.
-		      Its mapping $\sigma_{i-1}$ is variable-free:
-		      for $i = 1$ it is $\sigma_0 = \sigma$,
-		      and for $i > 1$ it is returned by the $(i-1)$-st recursive call, to which (ii) applies.
-		\item \textbf{Terminal cases.} No recursive call.
-	\end{itemize}
-
-	\emph{Proof of (ii).}
-	By (i), variable expansion never applies in the tree,
-	so every case returns $\sigma$, the mapping of a recursive call,
-	or a join of such mappings, all variable-free
-	since $(\sigma_1 \sqcup \sigma_2)(v) = \sigma_1(v) \mid \sigma_2(v)$.
-	Hence $\sigma'$ is variable-free, and it remains to show the same for $e'$.
-	\begin{itemize}
-		\item \textbf{Terminal cases.} The result is an argument, a constant, or $\bot$.
-		      Arguments are variable-free by (i), and constants and $\bot$ contain no variables.
-		\item \textbf{Type unfolding, Subtype unfolding.}
-		      The result is the result of the recursive call, or a constant, or $\bot$.
-		      The induction hypothesis applies to the recursive call.
-		\item \textbf{Union decomposition.}
-		      The result is $e_{i_1}' \mid \dots \mid e_{i_k}'$, where each $e_{i_j}'$ is the result of a recursive call,
-		      hence variable-free by the induction hypothesis.
-		\item \textbf{Function decomposition.}
-		      The result is $f(h_1,\dots,h_n)$ or $\bot$, where each $h_i$ is the result of a recursive call,
-		      hence variable-free by the induction hypothesis. \qedhere
-	\end{itemize}
+	Suppose a branch has a variable expansion step $\meet_S(v,e,\sigma',C')$.
+	By Lemma~\ref{lem:onesided} one of its arguments is variable-free,
+	and since $v$ is a bare variable, $e$ is variable-free.
+	By Lemma~\ref{lem:subinv} $\sigma'$ is variable-free, so $\sigma'(v)$ is variable-free.
+	Hence the successor call $\meet_S(\sigma'(v),e,\sigma',C')$ has both arguments variable-free,
+	and by Lemma~\ref{lem:vfree-inv} every call in the subtree below it
+	has both arguments variable-free. No bare variable occurs there,
+	so no further variable expansion step is possible on the branch.
 \end{proof}
 
-\begin{lemma}[one-sided variable-freeness]\label{lem:onesided}
-	Let $\hat e_1,\hat e_2 \in \mathcal{T}$ with $\hat e_1$ or $\hat e_2$ variable-free,
-	let $\hat\sigma \in \Sigma$ be variable-free, and let $\hat C \subseteq T \times \mathcal{T}$.
-	Then in the call tree of $\meet_S(\hat e_1,\hat e_2,\hat\sigma,\hat C)$:
-	\begin{enumerate}
-		\item[(i)] every call $\meet_S(e_1,e_2,\sigma,C)$ has $\sigma$ variable-free,
-		      and $e_1$ or $e_2$ variable-free, and
-		\item[(ii)] if a call returns $(e',\sigma')$, then $\sigma'$ is variable-free.
-	\end{enumerate}
-\end{lemma}
-
-\begin{proof}
-	(i) and (ii) are proved together by induction on the order in which calls are issued and completed.
-	Every appeal is to an earlier point in this order: (i) at a call uses (i) at its parent
-	and (ii) at an earlier recursive call, which has returned; (ii) uses (i) at the same call and
-	(ii) at its recursive calls.
-
-	\emph{Proof of (i).} The root satisfies the claim by hypothesis.
-	Assume the claim at a call.
-	\begin{itemize}
-		\item \textbf{Type unfolding.}
-		      The recursive call receives the definition body, which is variable-free,
-		      together with a current argument.
-		      So one of its arguments is variable-free. The mapping $\sigma$ is unchanged.
-		\item \textbf{Subtype unfolding.}
-		      The recursive call receives the definition body $e$, which is variable-free,
-		      together with the current argument $f(e_1,\dots,e_n)$.
-		      So one of its arguments is variable-free. The mapping $\sigma$ is unchanged.
-		\item \textbf{Variable expansion.}
-		      As $v$ is a variable, the hypothesis forces the other argument $e$ to be variable-free,
-		      and $\sigma(v)$ is variable-free by hypothesis.
-		      Hence both arguments of the recursive call are variable-free,
-		      and the mapping it receives is $\sigma$, unchanged.
-		\item \textbf{Union decomposition.}
-		      The mapping $\sigma$ is unchanged.
-		      If $e$ is the variable-free argument, it is again an argument of each recursive call.
-		      If the union is the variable-free argument, each part $e_i$ is variable-free.
-		\item \textbf{Function decomposition.}
-		      The $i$-th recursive call is $\meet_S(e_i,g_i,\sigma_{i-1},C)$.
-		      Its arguments $e_i$ and $g_i$ are subterms of $f(e_1,\dots,e_n)$ and $f(g_1,\dots,g_n)$.
-		      A subterm of a variable-free term is variable-free,
-		      so whichever of the two is variable-free by hypothesis supplies a variable-free argument.
-		      Its mapping $\sigma_{i-1}$ is also variable-free:
-		      for $i = 1$ we have $\sigma_0 = \sigma$, variable-free by hypothesis,
-		      and for $i > 1$ the mapping $\sigma_{i-1}$ is returned by the $(i-1)$-st recursive call,
-		      to which (ii) applies.
-		\item \textbf{Terminal cases.} No recursive call.
-	\end{itemize}
-
-	\emph{Proof of (ii).} The only case that alters the mapping is variable expansion, which returns
-	$\{v' \mapsto \sigma'(v') \mid v' \neq v \in V\} \cup \{v \mapsto e'\}$,
-	where $(e',\sigma')$ is the result of the recursive call.
-	By (i) that recursive call has both arguments and its mapping variable-free,
-	so by Lemma~\ref{lem:absorbing}(ii) both $e'$ and $\sigma'$ are variable-free,
-	and hence so is the returned mapping.
-	In every other case the returned mapping is the mapping of a recursive call
-	(type unfolding, subtype unfolding, function decomposition),
-	a join $\sigma_{i_1} \sqcup \dots \sqcup \sigma_{i_k}$ of such mappings (union decomposition),
-	or $\sigma$ itself (terminal cases).
-	In the first case the induction hypothesis applies.
-	In the second it applies to each $\sigma_{i_j}$, and a join of variable-free mappings is variable-free,
-	since $(\sigma_1 \sqcup \sigma_2)(v) = \sigma_1(v) \mid \sigma_2(v)$.
-	In the third the mapping is variable-free by (i).
-\end{proof}
-
-Note that (ii) makes no claim about $e'$, and cannot:
-the \emph{top} case returns the other argument unchanged,
-so a call satisfying the hypothesis may well return an expression containing variables.
-
-\begin{lemma}[argument pool]\label{lem:pool}
-	Let $\hat e_1,\hat e_2 \in \mathcal{T}$, $\hat\sigma \in \Sigma$, and $\hat C \subseteq T \times \mathcal{T}$.
-	Consider a sequence of calls along a branch starting at
-	$\meet_S(\hat e_1,\hat e_2,\hat\sigma,\hat C)$ in which no var-step occurs.
-	Then every argument of every call in that sequence lies in
+\begin{lemma}[argument pool along a branch]\label{lem:branchpool}
+	Let $S$ be a type specification, $\sigma \in \Sigma$ variable-free,
+	and $C \subseteq T \times \mathcal{T}$,
+	with at least one of $e_1$ and $e_2$ variable-free.
+	Along a branch of the evaluation of $\meet_S(e_1,e_2,\sigma,C)$,
+	let $E = \subexp(\sigma'(v))$ if the branch has a variable expansion step $\meet_S(v,e,\sigma',C')$,
+	and $E = \emptyset$ otherwise.
+	Then every argument of every call along the branch lies in the finite set
 	\[
-		P = \subexp(\hat e_1) \cup \subexp(\hat e_2) \cup S_{\mathrm{sub}}.
+		P = \subexp(e_1) \cup \subexp(e_2) \cup \subexp(S) \cup E.
 	\]
 \end{lemma}
 
 \begin{proof}
-	By induction along the sequence. The first arguments lie in $P$. Assume a call's arguments lie in $P$,
-	and consider its successor in the sequence.
-	\begin{itemize}
-		\item \textbf{Variable expansion.} Excluded by hypothesis.
-		\item \textbf{Type unfolding, Subtype unfolding.}
-		      The successor call receives one current argument, which lies in $P$,
-		      and a definition body, which lies in $S_{\mathrm{sub}} \subseteq P$.
-		\item \textbf{Union decomposition.}
-		      The successor receives $e_i$, a part of a current argument and hence a subterm of it,
-		      and $e$, a current argument. Both lie in $P$.
-		\item \textbf{Function decomposition.}
-		      The successor receives $e_i$ and $g_i$, subterms of current arguments, hence in $P$.
-		\item \textbf{Terminal cases.} No recursive call. \qedhere
-	\end{itemize}
-\end{proof}
-
-\begin{lemma}[at most one variable expansion]\label{lem:onevar}
-	Let $\hat e_1,\hat e_2 \in \mathcal{T}$ with $\hat e_1$ or $\hat e_2$ variable-free,
-	let $\hat\sigma \in \Sigma$ be variable-free, and let $\hat C \subseteq T \times \mathcal{T}$.
-	Then every branch of the call tree of $\meet_S(\hat e_1,\hat e_2,\hat\sigma,\hat C)$ contains at most one var-step.
-\end{lemma}
-
-\begin{proof}
-	A var-step requires an argument that is a bare variable.
-	By Lemma~\ref{lem:onesided}(i), at such a call the mapping $\sigma$ is variable-free
-	and the other argument is variable-free.
-	Hence the recursive call has both arguments and its mapping variable-free.
-	By Lemma~\ref{lem:absorbing}(i), applied to the subtree rooted at that call,
-	every call below it has variable-free arguments,
-	so no bare variable occurs and variable expansion cannot apply again.
+	$P$ is finite: by Lemma~\ref{lem:onevar} the branch has at most one variable expansion step,
+	so $E$ is $\subexp$ of at most one expression.
+	Argue by induction along the branch. The first arguments $e_1, e_2$ lie in $P$.
+	For the induction step, every case passes to its successor a subterm of a current
+	argument or a definition body, both in $P$, except variable expansion,
+	which passes $\sigma'(v) \in E \subseteq P$ alongside the current argument $e$.
 \end{proof}
 
 \begin{lemma}[branches are finite]\label{lem:finitebranch}
-	Let $\hat e_1,\hat e_2 \in \mathcal{T}$ with $\hat e_1$ or $\hat e_2$ variable-free,
-	let $\hat\sigma \in \Sigma$ be variable-free, and let $\hat C \subseteq T \times \mathcal{T}$.
-	Then every branch of the call tree of $\meet_S(\hat e_1,\hat e_2,\hat\sigma,\hat C)$ is finite.
+	Let $S$ be a type specification, $\sigma \in \Sigma$ variable-free,
+	and $C \subseteq T \times \mathcal{T}$,
+	with at least one of $e_1$ and $e_2$ variable-free.
+	Then every branch of the evaluation of $\meet_S(e_1,e_2,\sigma,C)$ is finite.
 \end{lemma}
-
 \begin{proof}
-	By Lemma~\ref{lem:onevar} the branch splits at its var-step into at most two \emph{segments},
-	neither containing a var-step.
-	Fix a segment and let $\meet_S(a_1,a_2,\sigma_a,C_a)$ be its first call.
-	Since the segment is a sequence of calls along a branch in which no var-step occurs,
-	Lemma~\ref{lem:pool} applies, and every argument in the segment lies in the finite set
+	Fix a branch. By Lemma~\ref{lem:branchpool} every argument along it lies in a finite set $P$,
+	so every pair added to $C$ along the branch lies in the finite set $T_S \times P$.
+	For a call $\meet_S(e_1',e_2',\sigma',C')$ of the branch, let $b \in \{0,1\}$ be $1$
+	if a variable occurs in $e_1'$ or $e_2'$, and $0$ otherwise. Consider the measure
 	\[
-		P = \subexp(a_1) \cup \subexp(a_2) \cup S_{\mathrm{sub}}.
-	\]
-	Every pair added to $C$ arises from an unfolding. Its first component is the unfolded constant,
-	which is defined in $S$, and its second is an argument.
-	So every pair added within the segment lies in $T_S \times P$, a finite set.
-	For a call $\meet_S(e_1,e_2,\sigma,C)$ of the segment, consider the measure
-	\[
-		M = \Big(\ \big|(T_S \times P) \setminus C\big| \ ,\ \ \mathrm{size}(e_1) + \mathrm{size}(e_2) \ \Big) \in \mathbb{N}^2,
+		M = \Big(\ \big|(T_S \times P) \setminus C'\big| \ ,\ \ b \ ,\ \ \mathrm{size}(e_1') + \mathrm{size}(e_2') \ \Big) \in \mathbb{N}^3,
 	\]
 	ordered lexicographically.
-	\begin{itemize}
-		\item \textbf{Type unfolding.}
-		      Adds the pair $(t,e) \notin C$ to $C$, so the first component of $M$ strictly decreases.
-		\item \textbf{Subtype unfolding.}
-		      Adds the pair $(t,f(e_1,\dots,e_n)) \notin C$ to $C$, so the first component of $M$ strictly decreases.
-		\item \textbf{Variable expansion.} Does not occur in a segment.
-		\item \textbf{Union decomposition.}
-		      The guard is unchanged, and the recursive call receives $e_i$, a strict subterm of $e_1 \mid \dots \mid e_n$,
-		      together with $e$. Note the two arguments are exchanged.
-		      The sum of argument sizes strictly decreases, so the second component of $M$ strictly decreases.
-		\item \textbf{Function decomposition.}
-		      The guard is unchanged, and the recursive call receives $e_i$ and $g_i$,
-		      strict subterms of $f(e_1,\dots,e_n)$ and $f(g_1,\dots,g_n)$.
-		      The sum of argument sizes strictly decreases, so the second component of $M$ strictly decreases.
-		\item \textbf{Terminal cases.} No recursive call, and the branch ends.
-	\end{itemize}
-	The lexicographic order on $\mathbb{N}^2$ is well-founded and $M$ strictly decreases at every step,
-	so the segment is finite.
-	A branch consists of at most two finite segments, hence is finite.
+	Each step decreases $M$. A step that adds a pair to $C$ not already present
+	strictly decreases the first component. A variable expansion leaves $C$ unchanged
+	and replaces the bare variable by the variable-free expression $\sigma'(v)$
+	while the other argument is variable-free, so no variable remains and $b$ drops from $1$ to $0$,
+	strictly decreasing the second component.
+	Any other step either ends the branch, making no recursive call,
+	or leaves $C$ and $b$ unchanged and passes strict subterms of the current arguments
+	to the successor, strictly decreasing the third component.
+	The lexicographic order on $\mathbb{N}^3$ is well-founded and $M$ strictly decreases at every step,
+	so the branch is finite.
 \end{proof}
 
 \subsection*{Termination}
 
 \begin{theorem}\label{thm:termination}
-	Let $\hat e_1,\hat e_2 \in \mathcal{T}$ with $\hat e_1$ or $\hat e_2$ variable-free,
-	let $\hat\sigma \in \Sigma$ be variable-free, and let $\hat C \subseteq T \times \mathcal{T}$.
-	Then $\meet_S(\hat e_1,\hat e_2,\hat\sigma,\hat C)$ terminates.
+	Let $S$ be a type specification, $\sigma \in \Sigma$ variable-free,
+	and $C \subseteq T \times \mathcal{T}$,
+	with at least one of $e_1$ and $e_2$ variable-free.
+	Then $\meet_S(e_1,e_2,\sigma,C)$ terminates.
 \end{theorem}
 
 \begin{proof}
@@ -418,12 +298,19 @@ so a call satisfying the hypothesis may well return an expression containing var
 \end{proof}
 
 \begin{corollary}[type checking terminates]
-	In typclingo the meet is invoked repeatedly, each call taking as second argument
-	a type expression built from $S$, hence variable-free,
-	and as mapping the one returned by the previous call,
-	starting from the initial mapping, which sends every variable to $\mathbb{S}$
-	and is therefore variable-free.
-	By Lemma~\ref{lem:onesided}(ii) each returned mapping is again variable-free,
-	so every call satisfies the hypothesis of Theorem~\ref{thm:termination} and terminates.
+	In typclingo the meet is invoked repeatedly. Each call takes as second argument a
+	type expression built from $S$, which is variable-free, and as mapping the one returned
+	by the previous call. The first call starts from the initial mapping, which sends every
+	variable to $\mathbb{S}$ and is variable-free. Then every call terminates.
 \end{corollary}
+
+\begin{proof}
+	By induction over the sequence of calls.
+	The first call has a variable-free second argument and a variable-free mapping.
+	Suppose some call does. By Theorem~\ref{thm:termination} it terminates,
+	and by Lemma~\ref{lem:subreturn} it returns a variable-free mapping.
+	The next call receives that mapping and again has a variable-free second argument,
+	so the claim holds for it.
+\end{proof}
+
 \end{document}
