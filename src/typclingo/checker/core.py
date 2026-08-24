@@ -156,11 +156,11 @@ class TypeChecker:
         if isinstance(lhs, TypeVar):
             return self.subtype(env.get(lhs.name, SYMBOL), rhs, env, guard)
 
-        if isinstance(rhs, UnionCons):
-            return any(self.subtype(lhs, x, env, guard.copy()) for x in rhs.opts)
-
         if isinstance(lhs, UnionCons):
             return all(self.subtype(x, rhs, env, guard.copy()) for x in lhs.opts)
+
+        if isinstance(rhs, UnionCons):
+            return any(self.subtype(lhs, x, env, guard.copy()) for x in rhs.opts)
 
         if isinstance(lhs, FunctionCons) and isinstance(rhs, TypeCons):
             if rhs in (TOP, func_type(lhs)):
