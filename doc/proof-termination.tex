@@ -36,10 +36,10 @@ be the constants defined in $S$. $T_S$ is finite, since $S$ is.
 
 For a type expression $e$, its \emph{size} is defined by
 \[
-	\mathrm{size}(e) =
+	\mathrm{size}(e) = 1+
 	\begin{cases}
-		1 + \sum_{i=1}^n \mathrm{size}(e_i) & \text{if } e = f(e_1,\dots,e_n) \text{ or } e = e_1 \mid \dots \mid e_n, \\
-		1                               & \text{otherwise.}
+		\sum_{i=1}^n \mathrm{size}(e_i) & \text{if } e = f(e_1,\dots,e_n) \text{ or } e = e_1 \mid \dots \mid e_n, \\
+		0                               & \text{otherwise.}
 	\end{cases}
 \]
 
@@ -113,9 +113,9 @@ expressions when analyzing the meet computation.
 
 \begin{proof}
 	By Lemma~\ref{lem:vfree-pool} every argument of every reachable call lies in the finite set
-    \[
-        P = \subexp(e_1) \cup \subexp(e_2) \cup \subexp(S),
-    \]
+	\[
+		P = \subexp(e_1) \cup \subexp(e_2) \cup \subexp(S),
+	\]
 	so every guard pair added during the evaluation lies in the finite set $T_S \times P$.
 	For a call $\meet_S(e_1',e_2',\sigma',C')$ consider the measure
 	\[
@@ -175,6 +175,31 @@ expressions when analyzing the meet computation.
 	$\meet_S(e_1,e_2,\sigma,C)$ returns a variable-free substitution.
 \end{lemma}
 
+\todoin{There is no lemma (yet) that says $\sigma$ is variable-free down the call tree,
+	which is used by this lemma. This has to be
+	part of the induction hypthesis and has to be shown for the function meet case.
+	This seems rather obvious and just has to be mentioned.
+
+	I would recommend to write down the induction hypothesis:
+	for a call $meet(e_1, e_2, \sigma, C)$ with a call depth of size at most $n$
+	such that at least one of $e_1$ and $e_2$ is variable-free and $\sigma$ is variable-free,
+	then the returned substitution is variable-free.
+
+	It's clear that this holds for $k=0$.
+
+	Let $meet(e_1, e_2, \sigma, C)$ be a call with call depth $n+1$
+	such that at least one of $e_1$ and $e_2$ is variable-free and $\sigma$ is variable-free.
+	All subcalls have call depth at most $n$ and by Lemma~\ref{lem:onesided}
+	at least one of the arguments of each subcall is variable-free.
+	We can now use your argument for the variable expansion case below.
+	For the function meet it is also easy to see
+	that each subcall receives either the inital variable-free substitution
+	or an updated substitution returned by a subcall,
+	which is variable-free by the induction hypothesis.
+
+	So on the side we also obtain the invariant that every substitution received by a subcall is variable-free (in the terminating case).
+
+	We don't need Lemma~\ref{lem:vfree-term} because we already assumed that the call terminates.}
 \begin{proof}
 	We prove the lemma by induction over the finite call tree depth
 	of the terminating evaluation.
@@ -199,6 +224,12 @@ expressions when analyzing the meet computation.
 	the substitution $\sigma'$ is variable-free.
 \end{lemma}
 
+\todoin{
+	We have not yet shown that a subcall always terminates.
+	So this proof needs a case analysis on whether the subcall is terminating or not.
+	If it is terminating, we can use Lemma~\ref{lem:subreturn} to show that the returned substitution is variable-free.
+	If it is not terminating, we are still calling with a variable-free substition
+	and the invariant is preserved down the call tree but no further siblings are called.}
 \begin{proof}
 	By induction on the depth of the reachable calls. The root receives $\sigma$, variable-free by hypothesis.
 	Suppose a reachable call receives a variable-free mapping and consider the mappings its recursive calls receive.
