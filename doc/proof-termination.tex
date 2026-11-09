@@ -19,20 +19,20 @@
 
 \subsection*{Definitions}
 
+
+
 For a type expression $e$, the set $\subexp(e)$ of its \emph{subterms} is defined by
 \[
 	\subexp(e) = \{e\} \cup
 	\begin{cases}
-		\bigcup_{i=1}^n \subexp(e_i) & \text{if } e = f(e_1,\dots,e_n) \text{ or } e = e_1 \mid \dots \mid e_n, \\
+		\bigcup_{i=1}^n \subexp(e_i) & \text{if } e = g(e_1,\dots,e_n) \text{ with } g \in T \cup F,\\
+		                             & \quad\text{or } e = e_1 \mid \dots \mid e_n, \\
 		\emptyset                    & \text{otherwise.}
 	\end{cases}
 \]
 
 For a type specification $S$, let $\subexp(S) = \bigcup_{(t \lessdot e)\in S\,\text{or}\,(t \doteq e)\in S} \subexp(e)$
 be the set of subterms of all definition bodies. It is finite.
-
-Let $T_S = \{\, t : (t \lessdot e) \in S \text{ or } (t \doteq e) \in S \,\}$
-be the constants defined in $S$. $T_S$ is finite, since $S$ is.
 
 For a type expression $e$, its \emph{size} is defined by
 \[
@@ -55,7 +55,7 @@ We identify termination of $\meet_S$ with finiteness of its call tree.
 \begin{lemma}[variable-freeness invariant]\label{lem:vfree-inv}
 	Let $S$ be a type specification,
 	$\sigma \in \Sigma$,
-	and $C \subseteq T \times \mathcal{T}$.
+	and $C \subseteq \mathcal{T}_T \times \mathcal{T}$.
 
 	If type expressions $e_1$ and $e_2$ are variable-free,
 	then for every subcall $\meet_S(e_1',e_2',\sigma',C')$
@@ -83,43 +83,67 @@ we obtain the following corollary.
 The next invariant shows that we can restrict attention to a finite set of type
 expressions when analyzing the meet computation.
 
-\begin{lemma}[variable-free argument pool]\label{lem:vfree-pool}
-	Let $S$ be a type specification,
-	$\sigma \in \Sigma$,
-	$C \subseteq T \times \mathcal{T}$,
-	and $P = \subexp(e_1) \cup \subexp(e_2) \cup \subexp(S)$.
+\begin{lemma}[closure under substitution]\label{lem:closure}
+	Let $S$ be a type specification, let $e_1, e_2$ be type expressions, and let
+	$P_{\mathrm{arg}} = \subexp(e_1) \cup \subexp(e_2) \cup \subexp(S)$.
+	Let $t(\bar v) \lessdot e$ or $t(\bar v) \doteq e$ be a definition in $S$, and $\bar a \in P_{\mathrm{arg}}$.
+	Then for every $s(\bar b)$ with $s \in T$ occurring in $e[\bar a/\bar v]$, $\bar b \subseteq P_{\mathrm{arg}}$.
+\end{lemma}
 
-	If type expressions $e_1$ and $e_2$ are variable-free,
+\begin{proof}
+	Either $s(\bar b)$ occurs within some $a_i$, or it is the instance $s(\bar c)[\bar a/\bar v]$
+	of some $s(\bar c)$ occurring in $e$.
+	In the first case each $b_j$ is a subterm of $a_i \in P_{\mathrm{arg}}$, so $b_j \in P_{\mathrm{arg}}$
+	since $P_{\mathrm{arg}}$ is subterm-closed.
+	In the second case each $b_j = c_j[\bar a/\bar v]$, and by the grammar $c_j$ is a variable or a member of $\mathcal A$.
+	If $c_j$ is a variable, it is some $v_i$ since the definition is closed, so $b_j = a_i \in P_{\mathrm{arg}}$.
+	If $c_j \in \mathcal A$, then $b_j = c_j \in \subexp(S) \subseteq P_{\mathrm{arg}}$.
+	In all cases $b_j \in P_{\mathrm{arg}}$.
+\end{proof}
+
+\begin{lemma}[variable-free argument pool]\label{lem:vfree-pool}
+	Let $S$ be a type specification, $C \subseteq \mathcal{T}_T \times \mathcal{T}$, $\sigma \in \Sigma$,
+	\[
+		P_{\mathrm{arg}} = \subexp(e_1) \cup \subexp(e_2) \cup \subexp(S)\text{, and}
+	\]
+	\[
+		P = P_{\mathrm{arg}} \cup \bigcup \{\, \subexp(e[\bar a/\bar v]) :
+		(t(\bar v) \lessdot e) \in S \text{ or } (t(\bar v) \doteq e) \in S,\ \bar a \in P_{\mathrm{arg}} \,\}.
+	\]
+	Then $P$ is finite, and if type expressions $e_1$ and $e_2$ are variable-free,
 	then for every subcall $\meet_S(e_1',e_2',\sigma',C')$
 	reachable during the evaluation of $\meet_S(e_1,e_2,\sigma,C)$,
 	$e_1',e_2' \in P$.
 \end{lemma}
 
 \begin{proof}
-	By Corollary~\ref{cor:novarexp} there is no variable expansion step during the
-	evaluation of a meet with two variable-free type expressions, so every subcall
-	receives either a subterm of one of the current arguments or a definition body from
-	$S$. Therefore, all arguments of all reachable subcalls are contained in the finite set $P$.
+	$P_{\mathrm{arg}}$ is finite, $S$ has finitely many definitions,
+	and each body is instantiated over the finitely many tuples $\bar a \in P_{\mathrm{arg}}$,
+	each substituted body having finitely many subterms. So $P$ is finite.
+	By Corollary~\ref{cor:novarexp} no variable expansion occurs, so every subcall receives
+	either a subterm of a current argument or a substituted body $e[\bar a/\bar v]$,
+	where $t(\bar a)$ is a current argument and $t(\bar v) \lessdot e$ or $t(\bar v) \doteq e$ is in $S$.
+	A subterm of a current argument lies in $P$, since current arguments lie in $P$ and $P$ is subterm-closed.
+	For the substituted body, by Lemma~\ref{lem:closure} $\bar a \subseteq P_{\mathrm{arg}}$,
+	hence $e[\bar a/\bar v] \in P$ by definition of $P$.
+	Therefore every argument of every reachable subcall lies in $P$.
 \end{proof}
 
 \begin{lemma}[variable-free termination]\label{lem:vfree-term}
 	Let $S$ be a type specification,
 	$\sigma \in \Sigma$,
-	and $C \subseteq T \times \mathcal{T}$.
+	and $C \subseteq \mathcal{T}_T \times \mathcal{T}$.
 
 	If type expressions $e_1$ and $e_2$ are variable-free,
 	then the meet computation $\meet_S(e_1,e_2,\sigma,C)$ terminates.
 \end{lemma}
 
 \begin{proof}
-	By Lemma~\ref{lem:vfree-pool} every argument of every reachable call lies in the finite set
-    \[
-        P = \subexp(e_1) \cup \subexp(e_2) \cup \subexp(S),
-    \]
-	so every guard pair added during the evaluation lies in the finite set $T_S \times P$.
+	By Lemma~\ref{lem:vfree-pool} every argument of every reachable call lies in the finite set $P$,
+	so every guard pair added during the evaluation lies in the finite set $P \times P$.
 	For a call $\meet_S(e_1',e_2',\sigma',C')$ consider the measure
 	\[
-		M = \Big(\ \big|(T_S \times P) \setminus C'\big| \ ,\ \ \mathrm{size}(e_1') + \mathrm{size}(e_2') \ \Big) \in \mathbb{N}^2,
+		M = \Big(\ \big|(P \times P) \setminus C'\big| \ ,\ \ \mathrm{size}(e_1') + \mathrm{size}(e_2') \ \Big) \in \mathbb{N}^2,
 	\]
 	ordered lexicographically.
 	By Corollary~\ref{cor:novarexp} no variable expansion occurs.
@@ -136,7 +160,7 @@ expressions when analyzing the meet computation.
 \begin{lemma}[one-sided variable-freeness invariant]\label{lem:onesided}
 	Let $S$ be a type specification,
 	$\sigma \in \Sigma$,
-	and $C \subseteq T \times \mathcal{T}$.
+	and $C \subseteq \mathcal{T}_T \times \mathcal{T}$.
 
 	If at least one of the expressions $e_1$ and $e_2$ is variable-free,
 	then for every subcall $\meet_S(e_1',e_2',\sigma',C')$
@@ -152,7 +176,7 @@ expressions when analyzing the meet computation.
 
 \begin{lemma}[variable-free results]\label{lem:vfree-result}
 	Let $S$ be a type specification, $\sigma \in \Sigma$ variable-free,
-	and $C \subseteq T \times \mathcal{T}$, with $e_1$ and $e_2$ variable-free.
+	and $C \subseteq \mathcal{T}_T \times \mathcal{T}$, with $e_1$ and $e_2$ variable-free.
 	Then every terminating evaluation of $\meet_S(e_1,e_2,\sigma,C)$
 	returns a variable-free expression and a variable-free substitution.
 \end{lemma}
@@ -168,7 +192,7 @@ expressions when analyzing the meet computation.
 \end{proof}
 
 \begin{lemma}[variable-free substitutions are preserved on return]\label{lem:subreturn}
-	Let $S$ be a type specification, $\sigma \in \Sigma$, and $C \subseteq T \times \mathcal{T}$.
+	Let $S$ be a type specification, $\sigma \in \Sigma$, and $C \subseteq \mathcal{T}_T \times \mathcal{T}$.
 
 	If at least one of the expressions $e_1$ and $e_2$ is variable-free and
 	$\sigma$ is variable-free, then every terminating evaluation of
@@ -190,7 +214,7 @@ expressions when analyzing the meet computation.
 \end{proof}
 
 \begin{lemma}[variable-free substitution invariant]\label{lem:subinv}
-	Let $S$ be a type specification, $\sigma \in \Sigma$, and $C \subseteq T \times \mathcal{T}$.
+	Let $S$ be a type specification, $\sigma \in \Sigma$, and $C \subseteq \mathcal{T}_T \times \mathcal{T}$.
 
 	If at least one of the expressions $e_1$ and $e_2$ is variable-free
 	and $\sigma$ is variable-free,
@@ -216,7 +240,7 @@ expressions when analyzing the meet computation.
 
 \begin{lemma}[at most one variable expansion per branch]\label{lem:onevar}
 	Let $S$ be a type specification, $\sigma \in \Sigma$ variable-free,
-	and $C \subseteq T \times \mathcal{T}$ with at least one of $e_1$ and $e_2$ variable-free,
+	and $C \subseteq \mathcal{T}_T \times \mathcal{T}$ with at least one of $e_1$ and $e_2$ variable-free,
 	then every branch of the evaluation of $\meet_S(e_1,e_2,\sigma,C)$
 	contains at most one variable expansion step.
 \end{lemma}
@@ -234,7 +258,7 @@ expressions when analyzing the meet computation.
 
 \begin{lemma}[argument pool along a branch]\label{lem:branchpool}
 	Let $S$ be a type specification, $\sigma \in \Sigma$ variable-free,
-	and $C \subseteq T \times \mathcal{T}$,
+	and $C \subseteq \mathcal{T}_T \times \mathcal{T}$,
 	with at least one of $e_1$ and $e_2$ variable-free.
 	Along a branch of the evaluation of $\meet_S(e_1,e_2,\sigma,C)$,
 	let $E = \subexp(\sigma'(v))$ if the branch has a variable expansion step $\meet_S(v,e,\sigma',C')$,
@@ -256,17 +280,17 @@ expressions when analyzing the meet computation.
 
 \begin{lemma}[branches are finite]\label{lem:finitebranch}
 	Let $S$ be a type specification, $\sigma \in \Sigma$ variable-free,
-	and $C \subseteq T \times \mathcal{T}$,
+	and $C \subseteq \mathcal{T}_T \times \mathcal{T}$,
 	with at least one of $e_1$ and $e_2$ variable-free.
 	Then every branch of the evaluation of $\meet_S(e_1,e_2,\sigma,C)$ is finite.
 \end{lemma}
 \begin{proof}
 	Fix a branch. By Lemma~\ref{lem:branchpool} every argument along it lies in a finite set $P$,
-	so every pair added to $C$ along the branch lies in the finite set $T_S \times P$.
+	so every pair added to $C$ along the branch lies in the finite set $P \times P$.
 	For a call $\meet_S(e_1',e_2',\sigma',C')$ of the branch, let $b \in \{0,1\}$ be $1$
 	if a variable occurs in $e_1'$ or $e_2'$, and $0$ otherwise. Consider the measure
 	\[
-		M = \Big(\ \big|(T_S \times P) \setminus C'\big| \ ,\ \ b \ ,\ \ \mathrm{size}(e_1') + \mathrm{size}(e_2') \ \Big) \in \mathbb{N}^3,
+		M = \Big(\ \big|(P \times P) \setminus C'\big| \ ,\ \ b \ ,\ \ \mathrm{size}(e_1') + \mathrm{size}(e_2') \ \Big) \in \mathbb{N}^3,
 	\]
 	ordered lexicographically.
 	Each step decreases $M$. A step that adds a pair to $C$ not already present
@@ -285,7 +309,7 @@ expressions when analyzing the meet computation.
 
 \begin{theorem}\label{thm:termination}
 	Let $S$ be a type specification, $\sigma \in \Sigma$ variable-free,
-	and $C \subseteq T \times \mathcal{T}$,
+	and $C \subseteq \mathcal{T}_T \times \mathcal{T}$,
 	with at least one of $e_1$ and $e_2$ variable-free.
 	Then $\meet_S(e_1,e_2,\sigma,C)$ terminates.
 \end{theorem}
