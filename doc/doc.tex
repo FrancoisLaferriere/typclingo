@@ -41,7 +41,7 @@ The set $\mathcal{T}$ of \emph{type expressions} is the smallest set containing:
 	\item $(e_1 \mid ... \mid e_n)$ for $e_1,\dots,e_n \in \mathcal{T}$ and $n \geq 0$ (type union)
 \end{itemize}
 
-We omit the parentheses for type constructors and function types if the arity is zero
+We omit the parentheses for types and function types if the arity is zero
 and type unions when there is no risk of ambiguity.
 We define $\bot$ as the empty type union.
 
@@ -109,6 +109,7 @@ To give an idea how the meet computation is applied in typclingo,
 let $p(X), q(X)$ be some rule body.
 We assume that we have some type specification $S$ containing type definitions $e_1$ and $e_2$
 for the arguments of $p$ and $q$, respectively.
+We require these predicate argument types to be variable-free.
 We can then map the atoms $p(X)$ and $q(X)$ to the type expressions $p(x)$ and $q(x)$ where $x$ is a type variable.
 
 To check that the body is well-typed,
